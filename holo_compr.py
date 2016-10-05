@@ -2,11 +2,9 @@
 # -*- coding: utf-8 -*-
 import cv2
 import numpy as np
-import Image
 import os
 import math
 import io
-import bitstream
 
 path = os.getcwd() + "\\Test\\"
 
@@ -39,12 +37,12 @@ def extract_bitplanes(image):
 	for i in range(0, bit_planes):
 		bit_plane = get_bit_plane(image, 0b00000001 << i)
 		cv2.imwrite(path + "{}.bmp".format(i), bit_plane)
-		print "Image {}.bmp".format(i)
+		print ("Image {}.bmp".format(i))
 
 
 def encode_RLE(file):
 
-	mat = cv2.imread(path + file, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+	mat = cv2.imread(path + file, cv2.IMREAD_GRAYSCALE)
 	rows, cols = mat.shape
 	RLE = []
 
@@ -128,7 +126,7 @@ def do_RLE(images):
 	return decoded_images
 
 
-def decode_files(files):
+"""def decode_files(files):
 
 	files = [f for f in os.listdir(path) if not f.endswith('.bmp')]
 	counter = 0
@@ -141,42 +139,44 @@ def decode_files(files):
 
 		counter += 1
 
-	return decoded_images
+	return decoded_images"""
 
 
 def main():
 
 	file_name = "test_2000mm.BMP"
-	image = cv2.imread(file_name, cv2.CV_LOAD_IMAGE_GRAYSCALE)
-	print 'Image {} loaded.'.format(file_name)
-	q = raw_input('Do you want to me to display the image? (y/n) ')
+	image = cv2.imread(file_name, cv2.IMREAD_GRAYSCALE)
+	print ('Image {} loaded.'.format(file_name))
+	q = input('Do you want to me to display the image? (y/n) ')
 	if q.lower() == 'y':
 		show_image(file_name, image)
-		print ''
+		print ('')
 	else:
-		print ''
+		print ('')
 
-	print 'Extracting bitplanes to {}.'.format(path)
+	print ('Extracting bitplanes to {}.'.format(path))
 	extract_bitplanes(image)
 
-	print ''
-	print "Coding RLE in progres..."
+	print ('')
+	print ("Coding RLE in progress...")
 	images = [f for f in os.listdir(path) if f.endswith('.bmp')]
 	decoded_images = do_RLE(images)
-	print 'Data decoded.'
 
-	print ''
-	print 'Creating final image...'
+	print ('')
+	print ('Data decoded.')
+
+	print ('')
+	print ('Creating final image...')
 	final_image = join_images(decoded_images)
 	cv2.imwrite('final.bmp',final_image)
-	q = raw_input('Do you want to me to display the final image? (y/n) ')
+	q = input('Do you want to me to display the final image? (y/n) ')
 	if q.lower() == 'y':
 		show_image('final', final_image)
-		print ''
+		print ('')
 	else:
-		print ''
+		print ('')
 
-	print 'Program closed.'
+	print ('Program closed.')
 
 
 main()
