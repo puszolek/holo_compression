@@ -6,6 +6,7 @@ import Image
 import os
 import math
 import io
+import bitstream
 
 path = os.getcwd() + "\\Test\\"
 
@@ -38,15 +39,13 @@ def extract_bitplanes(image):
 	for i in range(0, bit_planes):
 		bit_plane = get_bit_plane(image, 0b00000001 << i)
 		cv2.imwrite(path + "{}.bmp".format(i), bit_plane)
-		print "Image {}.bmp has been successfully written to {}.".format(i,path)
+		print "Image {}.bmp".format(i)
 
 
 def encode_RLE(file):
 
 	mat = cv2.imread(path + file, cv2.CV_LOAD_IMAGE_GRAYSCALE)
-	print path+file
 	rows, cols = mat.shape
-	print mat.shape
 	RLE = []
 
 	for i in range(0, rows):
@@ -64,8 +63,8 @@ def encode_RLE(file):
 				j += 1
 			j += 1
 			row.append(np.uint8(length))
+		RLE.append(bytearray(row))
 
-		RLE.append(row)
 	return RLE
 
 
@@ -75,9 +74,6 @@ def decode_RLE(data, mask):
 	cols = np.sum(data[0][1:])
 	
 	decoded_image = np.zeros((rows, cols, 1), np.uint8)
-
-	print np.sum(data[1023])
-
 
 	for i in range(0, rows):
 		tmp = 0
@@ -114,25 +110,47 @@ def join_images(images):
 
 def main():
 
-	file_name = "test_2000mm.bmp"
+	file_name = "test_2000mm.BMP"
 	image = cv2.imread(file_name, cv2.CV_LOAD_IMAGE_GRAYSCALE)
-	show_image(file_name, image)
+	print 'Image {} loaded.'.format(file_name)
+	q = raw_input('Do you want to me to display the image? (y/n) ')
+	if q.lower() == 'y':
+		show_image(file_name, image)
+		print ''
+	else:
+		print ''
+
+	print 'Extracting bitplanes to {}.'.format(path)
 	extract_bitplanes(image)
 
-	files = os.listdir(path)
+	files = [f for f in os.listdir(path) if f.endswith('.bmp')]
 	decoded_images = []
 	counter = 0
 
 	for file in files:
 		RLE = encode_RLE(file)
+		file = open(path + str(counter), 'wb+')
+		for i in RLE:
+			file.write(i)
+
 		mask = 0b00000001 << counter
 		decoded_image = decode_RLE(RLE, mask)
 		decoded_images.append(decoded_image)
 		counter += 1
 		
+
+	print ''
+	print 'Creating final image...'
 	final_image = join_images(decoded_images)
-	cv2.imwrite(path + 'final.bmp',final_image)
-	show_image('final', final_image)
+	cv2.imwrite('final.bmp',final_image)
+	q = raw_input('Do you want to me to display the final image? (y/n) ')
+	if q.lower() == 'y':
+		show_image('final', final_image)
+		print ''
+	else:
+		print ''
+
+	print 'Program closed.'
 
 
 main()
