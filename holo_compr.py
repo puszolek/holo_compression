@@ -69,7 +69,7 @@ def encode_RLE(file):
 
 
 def decode_RLE(data, mask):
-	
+
 	rows = len(data)
 	cols = np.sum(data[0][1:])
 	
@@ -108,6 +108,42 @@ def join_images(images):
 	return final_image
 
 
+def do_RLE(images):
+	
+	counter = 0
+	decoded_images = []
+
+	for file in images:
+		RLE = encode_RLE(file)
+		file = open(path + str(counter), 'wb+')
+		for i in RLE:
+			file.write(i)
+
+		mask = 0b00000001 << counter
+		decoded_image = decode_RLE(RLE, mask)
+		decoded_images.append(decoded_image)
+
+		counter += 1
+
+	return decoded_images
+
+
+def decode_files(files):
+
+	files = [f for f in os.listdir(path) if not f.endswith('.bmp')]
+	counter = 0
+	decoded_images = []
+
+	for file in files:
+		mask = 0b00000001 << counter
+		decoded_image = decode_RLE(RLE, mask)
+		decoded_images.append(decoded_image)
+
+		counter += 1
+
+	return decoded_images
+
+
 def main():
 
 	file_name = "test_2000mm.BMP"
@@ -123,21 +159,11 @@ def main():
 	print 'Extracting bitplanes to {}.'.format(path)
 	extract_bitplanes(image)
 
-	files = [f for f in os.listdir(path) if f.endswith('.bmp')]
-	decoded_images = []
-	counter = 0
-
-	for file in files:
-		RLE = encode_RLE(file)
-		file = open(path + str(counter), 'wb+')
-		for i in RLE:
-			file.write(i)
-
-		mask = 0b00000001 << counter
-		decoded_image = decode_RLE(RLE, mask)
-		decoded_images.append(decoded_image)
-		counter += 1
-		
+	print ''
+	print "Coding RLE in progres..."
+	images = [f for f in os.listdir(path) if f.endswith('.bmp')]
+	decoded_images = do_RLE(images)
+	print 'Data decoded.'
 
 	print ''
 	print 'Creating final image...'
