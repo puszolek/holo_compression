@@ -16,18 +16,6 @@ def show_image(name, image):
 	cv2.destroyAllWindows()
 
 
-def extract_bitplanes(image):
-
-	if not os.path.exists(path):
-		os.makedirs(path)
-
-	bit_planes = 8
-	for i in range(0,bit_planes):
-		bit_plane = get_bit_plane(image, 0b00000001 << i)
-		cv2.imwrite(path + "{}.bmp".format(i), bit_plane)
-		print "Image {}.bmp has been successfully written to {}.".format(i,path)
-
-
 def get_bit_plane(mat, mask):
 
 	rows, cols = mat.shape
@@ -41,17 +29,31 @@ def get_bit_plane(mat, mask):
 	return bitplane
 
 
+def extract_bitplanes(image):
+
+	if not os.path.exists(path):
+		os.makedirs(path)
+
+	bit_planes = 8
+	for i in range(0, bit_planes):
+		bit_plane = get_bit_plane(image, 0b00000001 << i)
+		cv2.imwrite(path + "{}.bmp".format(i), bit_plane)
+		print "Image {}.bmp has been successfully written to {}.".format(i,path)
+
+
 def encode_RLE(file):
 
 	mat = cv2.imread(path + file, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+	print path+file
 	rows, cols = mat.shape
+	print mat.shape
 	RLE = []
 
 	for i in range(0, rows):
 		row = []
 		if (mat.item(i,0) != 0):
 			row.append(np.uint8(1))
-		elif (mat.item(i,0) == 0):
+		else:
 			row.append(np.uint8(0))
 
 		j = 0
@@ -60,8 +62,8 @@ def encode_RLE(file):
 			while ((j+1 < cols) and (mat.item(i,j) == mat.item(i,j+1))):
 				length = length + 1
 				j += 1
-			row.append(np.uint8(length))
 			j += 1
+			row.append(np.uint8(length))
 
 		RLE.append(row)
 	return RLE
@@ -74,12 +76,17 @@ def decode_RLE(data, mask):
 	
 	decoded_image = np.zeros((rows, cols, 1), np.uint8)
 
+	print np.sum(data[1023])
+
+
 	for i in range(0, rows):
 		tmp = 0
 		if data[i][0] == 0:
-			color = 1
-		else:
 			color = 0
+		else:
+			color = 1
+
+		del(data[i][0])
 
 		for j in range(0, len(data[i])):
 			color = color % 2
@@ -110,7 +117,7 @@ def main():
 	file_name = "test_2000mm.bmp"
 	image = cv2.imread(file_name, cv2.CV_LOAD_IMAGE_GRAYSCALE)
 	show_image(file_name, image)
-	#extract_bitplanes(image)
+	extract_bitplanes(image)
 
 	files = os.listdir(path)
 	decoded_images = []
@@ -123,9 +130,8 @@ def main():
 		decoded_images.append(decoded_image)
 		counter += 1
 		
-		#show_image(str(file), decoded_image)
-		
 	final_image = join_images(decoded_images)
+	cv2.imwrite(path + 'final.bmp',final_image)
 	show_image('final', final_image)
 
 
