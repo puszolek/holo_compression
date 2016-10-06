@@ -3,6 +3,7 @@
 import os
 import cv2
 import numpy as np
+import sys
 
 
 path = os.getcwd()
@@ -54,6 +55,11 @@ def main():
 	print (images)
 	img1 = load_image(images[0])
 	img2 = load_image(images[1])
+
+	if (img1.shape != img2.shape):
+		print('Images must be the same size!')
+		print('Program closed')
+		sys.exit(0)
 
 	diff, identical = compare(img1, img2)
 	print('Are {} identical? {}'.format(images, identical))
