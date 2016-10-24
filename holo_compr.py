@@ -68,9 +68,6 @@ def encode_RLE(file):
 
 def decode_RLE(data, mask):
 
-	#print(data)
-
-	#time.sleep(100)
 	size = len(data)
 	
 	a = []	
@@ -88,7 +85,7 @@ def decode_RLE(data, mask):
 	rows = len(a)
 	cols = np.sum(a[0])
 
-	print(rows, cols)
+	print("{}: {}x{}".format(int(math.log(mask,2)), rows, cols))
 
 	decoded_image = np.zeros((rows, cols, 1), np.uint8)
 
@@ -131,10 +128,6 @@ def do_RLE(images):
 
 	for file in images:
 		RLE = encode_RLE(file)
-		#print (RLE[0])
-
-		#time.sleep(100)
-
 		file = io.open(path + str(counter), 'wb+')
 		for i in RLE:
 			file.write(i)
@@ -187,7 +180,6 @@ def main():
 
 	print ("Coding RLE in progress...")
 	images = [f for f in os.listdir(path) if f.endswith('.bmp')]
-	#decoded_images = 
 	do_RLE(images)
 	print('Data encoded.')
 	print('')
@@ -196,7 +188,6 @@ def main():
 	decoded_images = decode_files()
 	print ('')
 	print ('Data decoded.')
-	print(decoded_images[0])
 
 	print ('')
 	print ('Creating final image...')
