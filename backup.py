@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import cv2
 import numpy as np
 import os
 import math
 import io
-import sys
-import time
 
 path = os.getcwd() + "\\Test\\"
 
@@ -25,7 +24,7 @@ def get_bit_plane(mat, mask):
 	for i in range(0, rows):
 		for j in range(0, cols):
 			px = mat.item(i,j) & mask
-			bitplane.itemset((i,j),np.uint8(px))
+			bitplane.itemset((i,j),px)
 			
 	return bitplane
 
@@ -49,8 +48,10 @@ def encode_RLE(file):
 	RLE = []
 
 	for i in range(0, rows):
-		row = bytearray()
-		if (mat.item(i,0) == 0):
+		row = []
+		if (mat.item(i,0) != 0):
+			row.append(np.uint8(1))
+		else:
 			row.append(np.uint8(0))
 
 		j = 0
@@ -60,50 +61,54 @@ def encode_RLE(file):
 				length = length + 1
 				j += 1
 			j += 1
-			row.append(length)
-		RLE.append(row)
+			row.append(np.uint8(length))
+		RLE.append(bytearray(row))
 
 	return RLE
 
 
-def decode_RLE(data, mask):
+def decode_RLE(file, mask):
 
-	#print(data)
+	with open(path + file, 'rb') as f:
+		data = f.read()
 
-	#time.sleep(100)
-	size = len(data)
-	
 	a = []	
 	b = []
 	counter = 0
 
+	print (len(data))
+
 	for d in data:
-		counter += d
+		counter += int.from_bytes(d, byteorder="big")
 		b.append(d)
 		if counter >= 1024:
 			a.append(b)
 			counter = 0
-			b = []
+
+	print (len(a))
 
 	rows = len(a)
+	print(a[0])
+	print(len(a[0]))
 	cols = np.sum(a[0])
-
+	
 	print(rows, cols)
 
 	decoded_image = np.zeros((rows, cols, 1), np.uint8)
 
 	for i in range(0, rows):
 		tmp = 0
-		if a[i][0] == 0:
+		if data[i][0] == 0:
 			color = 0
-			del(a[i][0])
 		else:
 			color = 1
 
-		for j in range(0, len(a[i])):
+		del(data[i][0])
+
+		for j in range(0, len(data[i])):
 			color = color % 2
-			cv2.line(decoded_image, (tmp,i), (tmp+a[i][j],i), (color*mask,color*mask,color*mask), 1)
-			tmp += a[i][j]
+			cv2.line(decoded_image, (tmp,i), (tmp+data[i][j],i), (color*mask,color*mask,color*mask), 1)
+			tmp += data[i][j]
 			color += 1
 
 	return decoded_image
@@ -128,33 +133,29 @@ def do_RLE(images):
 	
 	counter = 0
 	decoded_images = []
+	suma = 0
 
 	for file in images:
 		RLE = encode_RLE(file)
-		#print (RLE[0])
-
-		#time.sleep(100)
-
-		file = io.open(path + str(counter), 'wb+')
+		file = open(path + str(counter), 'wb+')
 		for i in RLE:
 			file.write(i)
-
-		mask = 0b00000001 << counter
+		file.close()
 		counter += 1
 
 
-def decode_files():
+def decode_files(files):
 
-	files = [f for f in os.listdir(path) if not f.endswith('.bmp')]
 	counter = 0
 	decoded_images = []
 
 	for file in files:
+
+		print('Decoding file {}...'.format(file))
 		mask = 0b00000001 << counter
-		f = open(path+file, 'rb+')
-		decoded_image = decode_RLE(f.read(), mask)
-		f.close()
+		decoded_image = decode_RLE(file, mask)
 		decoded_images.append(decoded_image)
+
 		counter += 1
 
 	return decoded_images
@@ -172,31 +173,20 @@ def main():
 	else:
 		print ('')
 
-	q = input('Do you want to extract the bitplanes? (y/n) ')
-	if q.lower() == 'y':
-		print ('Extracting bitplanes to {}.'.format(path))
-		extract_bitplanes(image)
-		print ('')
-	else:
-		print ('')
+	print ('Extracting bitplanes to {}.'.format(path))
+	extract_bitplanes(image)
 
-	if len([f for f in os.listdir(path)]) == 0:
-		print ('No images to encode. Program is closing.')
-		print('')
-		sys.exit(0)
-
+	print ('')
 	print ("Coding RLE in progress...")
 	images = [f for f in os.listdir(path) if f.endswith('.bmp')]
-	#decoded_images = 
 	do_RLE(images)
-	print('Data encoded.')
-	print('')
+	print ('Data coded.')
 
-	print('Decoding in progress...')
-	decoded_images = decode_files()
 	print ('')
+	print ('Decoding data in progress...')
+	files = [f for f in os.listdir(path) if not f.endswith('.bmp')]
+	decoded_images = decode_files(files)
 	print ('Data decoded.')
-	print(decoded_images[0])
 
 	print ('')
 	print ('Creating final image...')
