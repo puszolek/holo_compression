@@ -6,7 +6,6 @@ import os
 import math
 import io
 import sys
-import time
 
 path = os.getcwd() + "\\Test\\"
 
@@ -60,7 +59,7 @@ def encode_RLE(file):
 				length = length + 1
 				j += 1
 			j += 1
-			row.append(length)
+			row.append(np.uint8(length))
 		RLE.append(row)
 
 	return RLE
@@ -68,8 +67,6 @@ def encode_RLE(file):
 
 def decode_RLE(data, mask):
 
-	size = len(data)
-	
 	a = []	
 	b = []
 	counter = 0
@@ -124,15 +121,12 @@ def join_images(images):
 def do_RLE(images):
 	
 	counter = 0
-	decoded_images = []
 
 	for file in images:
 		RLE = encode_RLE(file)
 		file = io.open(path + str(counter), 'wb+')
 		for i in RLE:
 			file.write(i)
-
-		mask = 0b00000001 << counter
 		counter += 1
 
 
