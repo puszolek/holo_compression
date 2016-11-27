@@ -82,8 +82,18 @@ celerybeat-schedule
 venv/
 ENV/
 
+# bmp
+*.bmp
+*.BMP
+
 # Spyder project settings
 .spyderproject
 
 # Rope project settings
 .ropeproject
+
+#
+Test/
+Source/
+New Folder/
+stats/
