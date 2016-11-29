@@ -66,13 +66,20 @@ def main():
   
     # TOTAL SIZES
     index, sorted_sizes = get_total_sizes_stats(total_sizes)
+    
+    fontP = FontProperties()
+    fontP.set_size('small')
+    
+    textbox = ' min: {:.4f}\n max: {:.4f}\n avg: {:.4f}\n stdev: {:.4f}\n median: {:.4f}\n data[0]: {:.4f}'.format(np.min(sorted_sizes), np.max(sorted_sizes), np.average(sorted_sizes), np.std(sorted_sizes), np.median(sorted_sizes), sorted_sizes[199])
+    figtext = plt.figtext(0.91, 0.1, textbox, fontproperties = fontP)
+    
     plt.plot(index, sorted_sizes, color = 'red')
     plt.grid(True)
     plt.title('Total size')
     plt.ylim(3000, 4400)
     plt.ylabel('SIze [kilobytes]')
     plt.xlabel('f [mm]')
-    plt.savefig('F:\\Projekty\\holo_compression\\stats\\total_size.png')
+    plt.savefig('F:\\Projekty\\holo_compression\\stats\\total_size.png', bbox_extra_artists=(figtext,), bbox_inches='tight')
 
     # PLOTS FOR EACH BITPLANE
     total_sizes_per_bitplane = {'0': [], '1': [], '2': [], '3': [], '4': [], '5': [], '6': [], '7': [],}
@@ -81,9 +88,6 @@ def main():
         sizes = stat[1]
         for s in sizes:
            total_sizes_per_bitplane[s].append((lens_f, sizes[s]))
-           
-    fontP = FontProperties()
-    fontP.set_size('small')
 
     for key in total_sizes_per_bitplane:
         data = total_sizes_per_bitplane[key]

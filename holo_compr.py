@@ -6,6 +6,7 @@ import os
 import math
 import io
 import sys
+import time
 
 path = os.getcwd() + "\\Test"
 
@@ -44,13 +45,14 @@ def extract_bitplanes(image, file_path):
 
 
 def encode_RLE(file, file_path):
-
+    #file 0.bmp
     print(file_path + '\\' + file)
     mat = cv2.imread(file_path + '\\' + file, cv2.IMREAD_GRAYSCALE)
     rows, cols = mat.shape
     print(rows, cols)
     RLE = []
     maxa = []
+    lenn = 0
     
     for i in range(0, rows):
         row = bytearray()
@@ -64,6 +66,7 @@ def encode_RLE(file, file_path):
                 length = length + 1
                 j += 1
             j += 1
+            
             if length in range(256,511):
                 print("Przekroczono zakres uint8! {}".format(length))
                 n = length % 2
@@ -92,14 +95,114 @@ def encode_RLE(file, file_path):
                 row.append(np.uint8(length - 1020))
             else:
                 row.append(np.uint8(length))
-                
+        max_len = maxa.append(np.max(row))
         RLE.append(row)
+        lenn += len(row)
+    
+    d = [m for m in maxa if m > 7]
+    print(np.max(maxa))
+    print(len(d))
+    print(lenn)
+    low_bits = ['0.bmp', '1.bmp', '2.bmp', '3.bmp', '4.bmp', '5.bmp']
+    if file in low_bits:
+        print("FIle in low bits, recalculating to 4 bits")
+        new_RLE = to_4bits(RLE)
+    else:
+        new_RLE = RLE
         
-    return RLE
+    #new_RLE = RLE
+    
+    return new_RLE
 
+    
+  
+def to_4bits(RLE):
 
-def decode_RLE(data, mask):
+    new_RLE = []
+    for row in RLE:
+        new_row = bytearray()
+        i = 0
+        while i < len(row):
+            # kompresujemy w 1 bajt
+            if row[i] <= 15 and i+1 < len(row) and row[i+1] <= 15:
+                hi = (row[i] << 4)
+                lo = row[i+1]
+                new_row.append(np.uint8(hi+lo))
+                i += 1
+            elif row[i] <= 15 and i+1 < len(row) and row[i+1] > 15:
+                hi = (row[i] << 4) 
+                lo_1 = (row[i+1]) & 0b00001111
+                new_row.append(np.uint8(hi + lo_1))
+                
+                hi_1 = row[i+1] & 0b11110000
+                n = int(hi_1 / 8)
+                for j in range(0, n):
+                    new_row.append(np.uint8(0b00001000))
+                i += 1
+            elif row[i] > 15 and i+1 < len(row) and row[i+1] <= 15:
+                hi = (row[i] & 0b11110000)
+                if row[i] % 8 != 0:
+                    lo = (row[i] << 4)
+                    new_row.append(np.uint8(lo))
+                n = int(hi / 8)
+                for j in range(0, n-1):
+                    new_row.append(np.uint8(0b10000000))
+                new_row.append(np.uint8(0b10000000 + row[i+1]))
+                i += 1
+            elif row[i] > 15 and i+1 < len(row) and row[i+1] > 15:
+                hi = (row[i] & 0b11110000)
+                if row[i] % 8 != 0:
+                    lo = (row[i] << 4)
+                    new_row.append(np.uint8(lo))
+                n = int(hi / 8)
+                for j in range(0, n-1):
+                    new_row.append(np.uint8(0b10000000))
+                 
+                if row[i] % 8 != 0:
+                    lo2 = row[i] & 0b00001111
+                else:
+                    lo2 = 0b00000000
+                new_row.append(np.uint8(0b10000000 + lo2))
+                
+                hi2 = row[i+1] & 0b11110000
+                n2 = hi2 / 8
+                for j in range(0, n):
+                    new_row.append(np.uint8(0b000010000))
+                i += 1
+            # na samym końcu
+            elif row[i] <= 15 and i == len(row)-1:
+                new_row.append(np.uint8(row[i] << 4))
+            else:
+                print('jeszcze inny')
+            i += 1
+    
+        new_RLE.append(new_row)
+        
+    return new_RLE
+    
 
+def to_8bits(data):
+
+    new_data = []
+
+    for d in data:
+        d1 = (d & 0b11110000) >> 4
+        d2 = (d & 0b00001111)
+        new_data.append(d1)
+        new_data.append(d2)
+          
+    data = new_data
+        
+    return new_data
+        
+    
+def decode_RLE(data, mask, file):
+
+    low_bits = ['0', '1', '2', '3', '4', '5']
+    if file in low_bits:
+        print(file)
+        data = to_8bits(data)
+    
     a = []    
     b = []
     counter = 0
@@ -108,7 +211,7 @@ def decode_RLE(data, mask):
     for d in data:
         counter += d
         b.append(d)
-        if counter >= 1024:
+        if counter == 1024:
             a.append(b)
             counter = 0
             b = []
@@ -173,7 +276,7 @@ def decode_files(file_path):
     for file in files:
         mask = 0b00000001 << counter
         f = open(file_path + '\\' + file, 'rb+')
-        decoded_image = decode_RLE(f.read(), mask)
+        decoded_image = decode_RLE(f.read(), mask, file)
         f.close()
         decoded_images.append(decoded_image)
         counter += 1
@@ -184,8 +287,7 @@ def decode_files(file_path):
 def main():
 
     sources_path =  os.getcwd() + "\\Source"
-    file_names = [f for f in os.listdir(sources_path)]
-    #file_names = file_names[]
+    file_names = [f for f in os.listdir(sources_path)][:1]
     print(file_names)
     
     i = 0
@@ -200,12 +302,12 @@ def main():
         image = cv2.imread(sources_path + '\\' + file_name, cv2.IMREAD_GRAYSCALE)
         print ('Image {} loaded.'.format(file_name))
        
-        """q = input('Do you want to me to display the image? (y/n) ')
+        '''q = input('Do you want to me to display the image? (y/n) ')
         if q.lower() == 'y':    
             show_image(file_name, image)
             print ('')
         else:
-            print ('')"""
+            print ('')'''
 
         #q = input('Do you want to extract the bitplanes? (y/n) ')
         #if q.lower() == 'y':
@@ -223,7 +325,6 @@ def main():
 
         print ("Coding RLE in progress...")
         images = [f for f in os.listdir(file_path) if f.endswith('.bmp')]
-    
         do_RLE(images, file_path)
         print('Data encoded.')
         print('')
