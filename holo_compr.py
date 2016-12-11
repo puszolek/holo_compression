@@ -122,11 +122,12 @@ def to_4bits(RLE):
                 
             elif row[i] <= 15 and i+1 < len(row) and row[i+1] > 15:
                 hi = (row[i] << 4) 
-                lo_1 = (row[i+1]) & 0b00001111
-                new_row.append(np.uint8(hi + lo_1))
-                
+                lo_1 = row[i+1] & 0b00001111
                 hi_1 = row[i+1] & 0b11110000
-                n = int(hi_1 / 8)
+                
+                new_row.append(np.uint8(hi + lo_1))
+
+                n = int(hi_1 / 8) 
                 for j in range(0, n):
                     new_row.append(np.uint8(0b00001000))
                 i += 1
@@ -173,10 +174,10 @@ def to_4bits(RLE):
                 n = int(hi / 8)
                 for j in range(0, n):
                     new_row.append(np.uint8(0b10000000))
-
             i += 1
-        #print(counter)
-        #sys.exit()
+            
+        new_row.append(np.uint8(0b11111111))
+        new_row.append(np.uint8(0b11111111))
         new_RLE.append(new_row)
         
     return new_RLE
@@ -191,8 +192,6 @@ def to_8bits(data):
         d2 = (d & 0b00001111)
         new_data.append(d1)
         new_data.append(d2)
-          
-    data = new_data
         
     return new_data
         
@@ -206,22 +205,17 @@ def decode_RLE(data, mask, file):
     print(sum(data)/1024)
     i = 0
     while i < len(data):
-    #for i in range(len(data)):
         counter += data[i]
         b.append(data[i])
         
         if counter == 1024:
-            # if data[i+1] == 0 and data[i+2] == 0:
-                # print('zera!')
-                # print(data[i])
-                # print(i)
-            if (i+2 < len(data) - 1) and data[i+1] == 0 and data[i+2] == 0:
-                #counter += data[i+1]
-                #print('tak')
-                b.append(data[i+1])
-                i += 1
-            # elif (i+2 < len(data) - 1) and data[i+1] == 0 and data[i+2] != 0:
-                # print('twojastara')
+            if (i+6< len(data) - 1) and data[i+1] == 0 and data[i+2] == 0 and data[i+3] == 15 and data[i+4] == 15 and data[i+5] == 15 and data[i+6] == 15:
+                print('tak')
+                i += 6
+            elif (i+5 < len(data) - 1) and data[i+1] == 0 and data[i+2] == 15 and data[i+3] == 15 and data[i+4] == 15 and data[i+5] == 15:
+                i += 5
+            elif (i+4 < len(data) - 1) and data[i+1] == 15 and data[i+2] == 15 and data[i+3] == 15 and data[i+4] == 15:
+                i += 4
             if i-1 > 0 and i+1 < len(data) -1 and data[i-1] == 0 and data[i] == 0 and data[i+1] == 0:
                 print('dupa')
             a.append(b)
@@ -246,9 +240,9 @@ def decode_RLE(data, mask, file):
 
         for j in range(0, len(a[i])):
             color = color % 2
-            tmp += a[i][j]
             if a[i][j] != 0:
                 cv2.line(decoded_image, (tmp,i), (tmp+a[i][j],i), (color*mask,color*mask,color*mask), 1)
+                tmp += a[i][j]
             color += 1
             
     cv2.imshow('dupa', decoded_image)
