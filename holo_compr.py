@@ -21,15 +21,21 @@ def get_bit_plane(mat, mask):
 
     rows, cols = mat.shape
     bitplane = np.zeros(mat.shape, dtype=np.uint8)
+    bitplane_bin = np.zeros(mat.shape, dtype=np.uint8)
+    
     print(rows, cols)
 
     for i in range(0, rows):
         for j in range(0, cols):
             px = mat.item(i,j) & mask
             bitplane.itemset((i,j),np.uint8(px))
+            if px == 0:
+                bitplane_bin.itemset((i,j),np.uint8(0))
+            else:
+                bitplane_bin.itemset((i,j),np.uint8(128))
            
     print(bitplane.shape)
-    return bitplane
+    return bitplane, bitplane_bin
 
 
 def extract_bitplanes(image, file_path):
@@ -39,19 +45,18 @@ def extract_bitplanes(image, file_path):
 
     bit_planes = 8
     for i in range(0, bit_planes):
-        bit_plane = get_bit_plane(image, 0b00000001 << i)
-        cv2.imwrite(file_path + "\{}.bmp".format(i), bit_plane)
+        bitplane, bitplane_bin = get_bit_plane(image, 0b00000001 << i)
+        cv2.imwrite(file_path + "\{}_.bmp".format(i), bitplane)
+        cv2.imwrite(file_path + "\{}bin.bmp".format(i), bitplane_bin)
         print ("Image {}.bmp".format(i))
 
 
 def encode_RLE(file, file_path):
-    #file 0.bmp
     print(file_path + '\\' + file)
     mat = cv2.imread(file_path + '\\' + file, cv2.IMREAD_GRAYSCALE)
     rows, cols = mat.shape
     print(rows, cols)
     RLE = []
-    maxa = []
     lenn = 0
     
     for i in range(0, rows):
@@ -68,13 +73,11 @@ def encode_RLE(file, file_path):
             j += 1
             
             if length in range(256,511):
-                print("Przekroczono zakres uint8! {}".format(length))
                 n = length % 2
                 row.append(np.uint8((length-n)/2))
                 row.append(np.uint8(0))
                 row.append(np.uint8(length - ((length-n)/2)))
             elif length in range(511, 766):
-                print("Przekroczono zakres uint8! {}".format(length))
                 n = length % 3
                 row.append(np.uint8((length -n)/3))
                 row.append(np.uint8(0))
@@ -82,7 +85,6 @@ def encode_RLE(file, file_path):
                 row.append(np.uint8(0))
                 row.append(np.uint8(length - 2*(length - n)/3))
             elif length in range(766, 1021):
-                print("Przekroczono zakres uint8! {}".format(length))
                 n = length % 4
                 for i in range(0,3):
                     row.append(np.uint8((length -n)/4))
@@ -95,25 +97,12 @@ def encode_RLE(file, file_path):
                 row.append(np.uint8(length - 1020))
             else:
                 row.append(np.uint8(length))
-        max_len = maxa.append(np.max(row))
         RLE.append(row)
         lenn += len(row)
     
-    d = [m for m in maxa if m > 7]
-    print(np.max(maxa))
-    print(len(d))
-    print(lenn)
-    low_bits = ['0.bmp', '1.bmp', '2.bmp', '3.bmp', '4.bmp', '5.bmp']
-    if file in low_bits:
-        print("FIle in low bits, recalculating to 4 bits")
-        new_RLE = to_4bits(RLE)
-    else:
-        new_RLE = RLE
-        
-    #new_RLE = RLE
+    new_RLE = to_4bits(RLE)
     
     return new_RLE
-
     
   
 def to_4bits(RLE):
@@ -122,13 +111,15 @@ def to_4bits(RLE):
     for row in RLE:
         new_row = bytearray()
         i = 0
+        counter = 0
         while i < len(row):
-            # kompresujemy w 1 bajt
             if row[i] <= 15 and i+1 < len(row) and row[i+1] <= 15:
+            
                 hi = (row[i] << 4)
                 lo = row[i+1]
                 new_row.append(np.uint8(hi+lo))
                 i += 1
+                
             elif row[i] <= 15 and i+1 < len(row) and row[i+1] > 15:
                 hi = (row[i] << 4) 
                 lo_1 = (row[i+1]) & 0b00001111
@@ -139,43 +130,53 @@ def to_4bits(RLE):
                 for j in range(0, n):
                     new_row.append(np.uint8(0b00001000))
                 i += 1
+                
             elif row[i] > 15 and i+1 < len(row) and row[i+1] <= 15:
-                hi = (row[i] & 0b11110000)
-                if row[i] % 8 != 0:
-                    lo = (row[i] << 4)
+
+                if row[i] & 0b00001111 != 0:
+                    lo = ((row[i] & 0b00001111) << 4)
                     new_row.append(np.uint8(lo))
+                    
+                hi = (row[i] & 0b11110000)
                 n = int(hi / 8)
                 for j in range(0, n-1):
                     new_row.append(np.uint8(0b10000000))
                 new_row.append(np.uint8(0b10000000 + row[i+1]))
+                
                 i += 1
+                
             elif row[i] > 15 and i+1 < len(row) and row[i+1] > 15:
-                hi = (row[i] & 0b11110000)
-                if row[i] % 8 != 0:
-                    lo = (row[i] << 4)
+            
+                if row[i] & 0b00001111 != 0:
+                    lo = ((row[i] & 0b00001111) << 4)
                     new_row.append(np.uint8(lo))
+               
+                hi = (row[i] & 0b11110000)
                 n = int(hi / 8)
                 for j in range(0, n-1):
                     new_row.append(np.uint8(0b10000000))
-                 
-                if row[i] % 8 != 0:
-                    lo2 = row[i] & 0b00001111
-                else:
-                    lo2 = 0b00000000
-                new_row.append(np.uint8(0b10000000 + lo2))
-                
+
+                new_row.append(np.uint8(0b10000000 + (row[i+1] & 0b00001111)))
                 hi2 = row[i+1] & 0b11110000
-                n2 = hi2 / 8
-                for j in range(0, n):
-                    new_row.append(np.uint8(0b000010000))
+                n2 = int(hi2 / 8)
+                for j in range(0, n2):
+                    new_row.append(np.uint8(0b00001000))
+                    
                 i += 1
-            # na samym końcu
+                
             elif row[i] <= 15 and i == len(row)-1:
                 new_row.append(np.uint8(row[i] << 4))
-            else:
-                print('jeszcze inny')
+                
+            elif row[i] > 15 and i == len(row)-1:
+                new_row.append(np.uint8(row[i] << 4))
+                hi = row[i] & 0b11110000
+                n = int(hi / 8)
+                for j in range(0, n):
+                    new_row.append(np.uint8(0b10000000))
+
             i += 1
-    
+        #print(counter)
+        #sys.exit()
         new_RLE.append(new_row)
         
     return new_RLE
@@ -198,28 +199,40 @@ def to_8bits(data):
     
 def decode_RLE(data, mask, file):
 
-    low_bits = ['0', '1', '2', '3', '4', '5']
-    if file in low_bits:
-        print(file)
-        data = to_8bits(data)
-    
+    data = to_8bits(data)
     a = []    
     b = []
     counter = 0
     print(sum(data)/1024)
-
-    for d in data:
-        counter += d
-        b.append(d)
+    i = 0
+    while i < len(data):
+    #for i in range(len(data)):
+        counter += data[i]
+        b.append(data[i])
+        
         if counter == 1024:
+            # if data[i+1] == 0 and data[i+2] == 0:
+                # print('zera!')
+                # print(data[i])
+                # print(i)
+            if (i+2 < len(data) - 1) and data[i+1] == 0 and data[i+2] == 0:
+                #counter += data[i+1]
+                #print('tak')
+                b.append(data[i+1])
+                i += 1
+            # elif (i+2 < len(data) - 1) and data[i+1] == 0 and data[i+2] != 0:
+                # print('twojastara')
+            if i-1 > 0 and i+1 < len(data) -1 and data[i-1] == 0 and data[i] == 0 and data[i+1] == 0:
+                print('dupa')
             a.append(b)
             counter = 0
             b = []
+        i += 1
 
     rows = len(a)
     cols = np.sum(a[0])
 
-    print("{}: {}x{}".format(int(math.log(mask,2)), rows, cols))
+    print("{}: {}x{}".format(int(math.log(mask, 2)), rows, cols))
 
     decoded_image = np.zeros((rows, cols, 1), np.uint8)
 
@@ -233,9 +246,13 @@ def decode_RLE(data, mask, file):
 
         for j in range(0, len(a[i])):
             color = color % 2
-            cv2.line(decoded_image, (tmp,i), (tmp+a[i][j],i), (color*mask,color*mask,color*mask), 1)
             tmp += a[i][j]
+            if a[i][j] != 0:
+                cv2.line(decoded_image, (tmp,i), (tmp+a[i][j],i), (color*mask,color*mask,color*mask), 1)
             color += 1
+            
+    cv2.imshow('dupa', decoded_image)
+    cv2.waitKey(0)
 
     return decoded_image
 
@@ -272,6 +289,7 @@ def decode_files(file_path):
     files = [f for f in os.listdir(file_path) if not f.endswith('.bmp')]
     counter = 0
     decoded_images = []
+    print(files)
 
     for file in files:
         mask = 0b00000001 << counter
@@ -287,7 +305,7 @@ def decode_files(file_path):
 def main():
 
     sources_path =  os.getcwd() + "\\Source"
-    file_names = [f for f in os.listdir(sources_path)][:1]
+    file_names = [f for f in os.listdir(sources_path)]
     print(file_names)
     
     i = 0
@@ -311,20 +329,20 @@ def main():
 
         #q = input('Do you want to extract the bitplanes? (y/n) ')
         #if q.lower() == 'y':
-        if True:
-            print ('Extracting bitplanes to {}.'.format(file_path))
-            extract_bitplanes(image, file_path)
-            print ('')
-        else:
-            print ('')
+        # if True:
+            # print ('Extracting bitplanes to {}.'.format(file_path))
+            # extract_bitplanes(image, file_path)
+            # print ('')
+        # else:
+            # print ('')
         
-        if len([f for f in os.listdir(file_path)]) == 0:
-            print ('No images to encode. Program is closing.')
-            print('')
-            sys.exit(0)
+        # if len([f for f in os.listdir(file_path)]) == 0:
+            # print ('No images to encode. Program is closing.')
+            # print('')
+            # sys.exit(0)
 
         print ("Coding RLE in progress...")
-        images = [f for f in os.listdir(file_path) if f.endswith('.bmp')]
+        images = [f for f in os.listdir(file_path) if f.endswith('_.bmp')]
         do_RLE(images, file_path)
         print('Data encoded.')
         print('')
@@ -344,7 +362,7 @@ def main():
             print ('')
         else:
             print ('')'''
-
+        sys.exit()
     print ('Program closed.')
 
 
