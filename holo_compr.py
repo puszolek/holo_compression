@@ -210,14 +210,11 @@ def decode_RLE(data, mask, file):
         
         if counter == 1024:
             if (i+6< len(data) - 1) and data[i+1] == 0 and data[i+2] == 0 and data[i+3] == 15 and data[i+4] == 15 and data[i+5] == 15 and data[i+6] == 15:
-                print('tak')
                 i += 6
             elif (i+5 < len(data) - 1) and data[i+1] == 0 and data[i+2] == 15 and data[i+3] == 15 and data[i+4] == 15 and data[i+5] == 15:
                 i += 5
             elif (i+4 < len(data) - 1) and data[i+1] == 15 and data[i+2] == 15 and data[i+3] == 15 and data[i+4] == 15:
                 i += 4
-            if i-1 > 0 and i+1 < len(data) -1 and data[i-1] == 0 and data[i] == 0 and data[i+1] == 0:
-                print('dupa')
             a.append(b)
             counter = 0
             b = []
@@ -244,9 +241,6 @@ def decode_RLE(data, mask, file):
                 cv2.line(decoded_image, (tmp,i), (tmp+a[i][j],i), (color*mask,color*mask,color*mask), 1)
                 tmp += a[i][j]
             color += 1
-            
-    cv2.imshow('dupa', decoded_image)
-    cv2.waitKey(0)
 
     return decoded_image
 
@@ -310,30 +304,30 @@ def main():
         print(file_path)
         if not os.path.exists(file_path):
             os.makedirs(file_path)
-        print(sources_path + file_name)
+        print(sources_path + '\\' + file_name)
         image = cv2.imread(sources_path + '\\' + file_name, cv2.IMREAD_GRAYSCALE)
         print ('Image {} loaded.'.format(file_name))
        
-        '''q = input('Do you want to me to display the image? (y/n) ')
+        q = input('Do you want to me to display the image? (y/n) ')
         if q.lower() == 'y':    
             show_image(file_name, image)
             print ('')
         else:
-            print ('')'''
+            print ('')
 
-        #q = input('Do you want to extract the bitplanes? (y/n) ')
+        q = input('Do you want to extract the bitplanes? (y/n) ')
         #if q.lower() == 'y':
-        # if True:
-            # print ('Extracting bitplanes to {}.'.format(file_path))
-            # extract_bitplanes(image, file_path)
-            # print ('')
-        # else:
-            # print ('')
+        if True:
+            print ('Extracting bitplanes to {}.'.format(file_path))
+            extract_bitplanes(image, file_path)
+            print ('')
+        else:
+            print ('')
         
-        # if len([f for f in os.listdir(file_path)]) == 0:
-            # print ('No images to encode. Program is closing.')
-            # print('')
-            # sys.exit(0)
+        if len([f for f in os.listdir(file_path)]) == 0:
+            print ('No images to encode. Program is closing.')
+            print('')
+            sys.exit(0)
 
         print ("Coding RLE in progress...")
         images = [f for f in os.listdir(file_path) if f.endswith('_.bmp')]
@@ -356,7 +350,6 @@ def main():
             print ('')
         else:
             print ('')'''
-        sys.exit()
     print ('Program closed.')
 
 
