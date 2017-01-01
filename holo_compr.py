@@ -57,7 +57,6 @@ def encode_RLE(file, file_path):
     rows, cols = mat.shape
     print(rows, cols)
     RLE = []
-    lenn = 0
     
     for i in range(0, rows):
         row = bytearray()
@@ -98,7 +97,6 @@ def encode_RLE(file, file_path):
             else:
                 row.append(np.uint8(length))
         RLE.append(row)
-        lenn += len(row)
     
     new_RLE = to_4bits(RLE)
     
@@ -196,8 +194,9 @@ def to_8bits(data):
     return new_data
         
     
-def decode_RLE(data, mask, file):
+def decode_RLE(data, file):
 
+    mask = 0b00000001 << int(file)
     data = to_8bits(data)
     a = []    
     b = []
@@ -275,17 +274,14 @@ def do_RLE(images, file_path):
 def decode_files(file_path):
 
     files = [f for f in os.listdir(file_path) if not f.endswith('.bmp')]
-    counter = 0
     decoded_images = []
     print(files)
 
     for file in files:
-        mask = 0b00000001 << counter
         f = open(file_path + '\\' + file, 'rb+')
-        decoded_image = decode_RLE(f.read(), mask, file)
+        decoded_image = decode_RLE(f.read(), file)
         f.close()
         decoded_images.append(decoded_image)
-        counter += 1
 
     return decoded_images
 

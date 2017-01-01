@@ -76,14 +76,88 @@ def decode_files(file_path):
     for file in files:
         mask = 0b00000001 << counter
         f = open(file_path + '\\' + file, 'rb+')
-        decoded_image = decode_RLE(f.read(), mask, file)
+        decoded_image = bytes_to_pxls(f.read(), file)
         f.close()
         decoded_images.append(decoded_image)
         counter += 1
 
     return decoded_images
 
+    
+def bytes_to_pxls(data, file):
+    print(file)
+    mask = 0b00000001 << int(file)
+    len_data = len(data)
+    size = len_data*8
+    dim = np.sqrt(size)
+    print(dim)
+    decoded_image = np.zeros((int(dim), int(dim), 1), np.uint8)
+    
+    counter = 0
+    b = []
+    a = []
+    for d in data:
+        counter += 1
+        pxls = byte_to_pxls(d)
+        b += pxls
+        
+        if counter == (dim/8):
+            a.append(b)
+            b = []
+            counter = 0
+            
+    for i in range(0, len(a)):
+        for j in range(0, len(a[i])):
+            decoded_image[i][j] = a[i][j] << int(file)
+            
+    return decoded_image
+           
+    
+def byte_to_pxls(d):
+    pxls = []
+    for i in range(0, 8):
+        pxls.append(((d & (0b10000000 >> i)) >> (7-i)) & 0b11111111)
+     
+    return pxls
+    
+    
+def pxls_to_byte(images, file_path):
+    counter = 0
 
+    for file in images:
+        RLE = encode_pxls(file, file_path)
+        file = io.open(file_path + '\\' + str(counter), 'wb+')
+        for i in RLE:
+            file.write(i)
+        counter += 1
+    
+    
+def encode_pxls(file, file_path):
+    print(file_path + '\\' + file)
+    mat = cv2.imread(file_path + '\\' + file, cv2.IMREAD_GRAYSCALE)
+    rows, cols = mat.shape
+    print(rows, cols)
+    bytes = []
+
+    for i in range(0, rows):
+        row = bytearray()
+        j = 0
+        counter = 7
+        byte = 0b00000000
+        while j < cols:
+            if counter == -1: 
+                byte = 0b00000000
+                counter = 7
+            if mat.item(i,j) != 0:
+                byte = byte | (0b00000001 << counter)
+            if counter == 0:
+                row.append(np.uint8(byte))
+            counter -= 1
+            j += 1
+        bytes.append(row)
+    return bytes
+    
+    
 def main():
 
     sources_path =  os.getcwd() + "\\Source"
@@ -110,8 +184,8 @@ def main():
             print ('')
 
         q = input('Do you want to extract the bitplanes? (y/n) ')
-        #if q.lower() == 'y':
-        if True:
+        if q.lower() == 'y':
+       # if True:
             print ('Extracting bitplanes to {}.'.format(file_path))
             extract_bitplanes(image, file_path)
             print ('')
@@ -125,7 +199,7 @@ def main():
 
         print ("Coding RLE in progress...")
         images = [f for f in os.listdir(file_path) if f.endswith('_.bmp')]
-        do_RLE(images, file_path)
+        pxls_to_byte(images, file_path)
         print('Data encoded.')
         print('')
 
@@ -138,12 +212,12 @@ def main():
         print ('Creating final image...')
         final_image = join_images(decoded_images)
         cv2.imwrite(file_path + 'final.bmp',final_image)
-        '''q = input('Do you want to me to display the final image? (y/n) ')
+        q = input('Do you want to me to display the final image? (y/n) ')
         if q.lower() == 'y':
             show_image('final', final_image)
             print ('')
         else:
-            print ('')'''
+            print ('')
     print ('Program closed.')
 
 
