@@ -14,13 +14,6 @@ def load_image(file_name):
     image = cv2.imread(file_name, cv2.IMREAD_GRAYSCALE)
     print ('Image {} loaded.'.format(file_name))
 
-    #q = input('Do you want to me to display the image? (y/n) ')
-    #if q.lower() == 'y':
-#        show_image(file_name, image)
-#        print ('')
-#    else:
-#        print ('')
-
     return image
 
 
@@ -48,19 +41,17 @@ def compare(img1, img2):
     return diff, identical
 
 
-def mse(imageA, imageB):
+def rmse(imageA, imageB):
 
 	err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
 	err /= float(imageA.shape[0] * imageA.shape[1])
-
-
 	return np.sqrt(err)
 
 
 def main():
 
-    #images = [f for f in os.listdir(path) if f.endswith('.bmp') or f.endswith('.BMP')]
     images = ['C:\\Users\\puszol\\Desktop\\lenna-4000\\odtworzenia\\lenna-4000_BMP.bmp', 'C:\\Users\\puszol\\Desktop\\lenna-4000\\odtworzenia\\lenna-4000_3.bmp']
+
     print(images)
     img1 = load_image(images[0])
     img2 = load_image(images[1])
@@ -71,8 +62,11 @@ def main():
         sys.exit(0)
 
     diff, identical = compare(img1, img2)
-    print('Are {} identical? {}'.format(images, identical))
-    err = mse(img1, img2)
+    print('Are {} identical?: {}'.format(images, identical))
+
+    err = rmse(img1, img2)
+    print('Reconstruction error (RMSE): {}'.format(err))
+
     q = input('Do you want to me to display the difference? (y/n) ')
     if q.lower() == 'y':
         show_image('diff', diff)
