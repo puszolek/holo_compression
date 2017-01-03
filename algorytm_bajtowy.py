@@ -6,22 +6,14 @@ import os
 import math
 import io
 import sys
-import time
 
 path = os.getcwd() + "\\Test"
-
-def show_image(name, image):
-
-    cv2.imshow(name, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
 
 def get_bit_plane(mat, mask):
 
     rows, cols = mat.shape
     bitplane = np.zeros(mat.shape, dtype=np.uint8)
-    bitplane_bin = np.zeros(mat.shape, dtype=np.uint8)
 
     print(rows, cols)
 
@@ -29,13 +21,9 @@ def get_bit_plane(mat, mask):
         for j in range(0, cols):
             px = mat.item(i,j) & mask
             bitplane.itemset((i,j),np.uint8(px))
-            if px == 0:
-                bitplane_bin.itemset((i,j),np.uint8(0))
-            else:
-                bitplane_bin.itemset((i,j),np.uint8(128))
 
     print(bitplane.shape)
-    return bitplane, bitplane_bin
+    return bitplane
 
 
 def extract_bitplanes(image, file_path):
@@ -45,9 +33,8 @@ def extract_bitplanes(image, file_path):
 
     bit_planes = 8
     for i in range(0, bit_planes):
-        bitplane, bitplane_bin = get_bit_plane(image, 0b00000001 << i)
+        bitplane = get_bit_plane(image, 0b00000001 << i)
         cv2.imwrite(file_path + "\{}_.bmp".format(i), bitplane)
-        cv2.imwrite(file_path + "\{}bin.bmp".format(i), bitplane_bin)
         print ("Image {}.bmp".format(i))
 
 
@@ -158,6 +145,8 @@ def encode_pxls(file, file_path):
 
 
 def main():
+    print('Algorytm bajtowy')
+    print('')
 
     sources_path =  os.getcwd() + "\\Source"
     file_names = [f for f in os.listdir(sources_path)]
@@ -167,55 +156,43 @@ def main():
     for file_name in file_names:
         print(i)
         i += 1
-        file_path = path + '\\' + file_name
-        print(file_path)
-        if not os.path.exists(file_path):
-            os.makedirs(file_path)
-        print(sources_path + '\\' + file_name)
-        image = cv2.imread(sources_path + '\\' + file_name, cv2.IMREAD_GRAYSCALE)
-        print ('Image {} loaded.'.format(file_name))
+        dir_path = path + '\\' + file_name
+        print(dir_path)
 
-        q = input('Do you want to me to display the image? (y/n) ')
-        if q.lower() == 'y':
-            show_image(file_name, image)
-            print ('')
-        else:
-            print ('')
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
 
-        q = input('Do you want to extract the bitplanes? (y/n) ')
-        if q.lower() == 'y':
-            print ('Extracting bitplanes to {}.'.format(file_path))
-            extract_bitplanes(image, file_path)
-            print ('')
-        else:
-            print ('')
+        image_file = sources_path + '\\' + file_name
+        image = cv2.imread(image_file, cv2.IMREAD_GRAYSCALE)
+        print ('Image {} loaded.'.format(image_file))
 
-        if len([f for f in os.listdir(file_path)]) == 0:
+        print ('Extracting bitplanes to {}.'.format(dir_path))
+        extract_bitplanes(image, dir_path)
+        print ('')
+
+        if len([f for f in os.listdir(dir_path)]) == 0:
             print ('No images to encode. Program is closing.')
             print('')
             sys.exit(0)
 
         print ("Coding RLE in progress...")
-        images = [f for f in os.listdir(file_path) if f.endswith('_.bmp')]
-        pxls_to_byte(images, file_path)
+        images = [f for f in os.listdir(dir_path) if f.endswith('_.bmp')]
+        pxls_to_byte(images, dir_path)
         print('Data encoded.')
         print('')
 
         print('Decoding in progress...')
-        decoded_images = decode_files(file_path)
+        decoded_images = decode_files(dir_path)
         print ('')
         print ('Data decoded.')
 
         print ('')
         print ('Creating final image...')
         final_image = join_images(decoded_images)
-        cv2.imwrite(file_path + 'final.bmp',final_image)
-        q = input('Do you want to me to display the final image? (y/n) ')
-        if q.lower() == 'y':
-            show_image('final', final_image)
-            print ('')
-        else:
-            print ('')
+        cv2.imwrite(dir_path + 'final.bmp', final_image)
+        print ('Done.')
+        print('')
+
     print ('Program closed.')
 
 
