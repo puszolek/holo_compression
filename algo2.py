@@ -11,7 +11,7 @@ import time
 path = os.getcwd() + "\\Test"
 
 def show_image(name, image):
-    
+
     cv2.imshow(name, image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
@@ -22,7 +22,7 @@ def get_bit_plane(mat, mask):
     rows, cols = mat.shape
     bitplane = np.zeros(mat.shape, dtype=np.uint8)
     bitplane_bin = np.zeros(mat.shape, dtype=np.uint8)
-    
+
     print(rows, cols)
 
     for i in range(0, rows):
@@ -33,7 +33,7 @@ def get_bit_plane(mat, mask):
                 bitplane_bin.itemset((i,j),np.uint8(0))
             else:
                 bitplane_bin.itemset((i,j),np.uint8(128))
-           
+
     print(bitplane.shape)
     return bitplane, bitplane_bin
 
@@ -52,7 +52,7 @@ def extract_bitplanes(image, file_path):
 
 
 def join_images(images):
-    
+
     rows = len(images[0])
     cols = len(images[0][0])
 
@@ -83,16 +83,15 @@ def decode_files(file_path):
 
     return decoded_images
 
-    
+
 def bytes_to_pxls(data, file):
     print(file)
-    mask = 0b00000001 << int(file)
     len_data = len(data)
     size = len_data*8
     dim = np.sqrt(size)
     print(dim)
     decoded_image = np.zeros((int(dim), int(dim), 1), np.uint8)
-    
+
     counter = 0
     b = []
     a = []
@@ -100,27 +99,27 @@ def bytes_to_pxls(data, file):
         counter += 1
         pxls = byte_to_pxls(d)
         b += pxls
-        
+
         if counter == (dim/8):
             a.append(b)
             b = []
             counter = 0
-            
+
     for i in range(0, len(a)):
         for j in range(0, len(a[i])):
             decoded_image[i][j] = a[i][j] << int(file)
-            
+
     return decoded_image
-           
-    
+
+
 def byte_to_pxls(d):
     pxls = []
     for i in range(0, 8):
         pxls.append(((d & (0b10000000 >> i)) >> (7-i)) & 0b11111111)
-     
+
     return pxls
-    
-    
+
+
 def pxls_to_byte(images, file_path):
     counter = 0
 
@@ -130,8 +129,8 @@ def pxls_to_byte(images, file_path):
         for i in RLE:
             file.write(i)
         counter += 1
-    
-    
+
+
 def encode_pxls(file, file_path):
     print(file_path + '\\' + file)
     mat = cv2.imread(file_path + '\\' + file, cv2.IMREAD_GRAYSCALE)
@@ -145,7 +144,7 @@ def encode_pxls(file, file_path):
         counter = 7
         byte = 0b00000000
         while j < cols:
-            if counter == -1: 
+            if counter == -1:
                 byte = 0b00000000
                 counter = 7
             if mat.item(i,j) != 0:
@@ -156,14 +155,14 @@ def encode_pxls(file, file_path):
             j += 1
         bytes.append(row)
     return bytes
-    
-    
+
+
 def main():
 
     sources_path =  os.getcwd() + "\\Source"
     file_names = [f for f in os.listdir(sources_path)]
     print(file_names)
-    
+
     i = 0
     for file_name in file_names:
         print(i)
@@ -175,9 +174,9 @@ def main():
         print(sources_path + '\\' + file_name)
         image = cv2.imread(sources_path + '\\' + file_name, cv2.IMREAD_GRAYSCALE)
         print ('Image {} loaded.'.format(file_name))
-       
+
         q = input('Do you want to me to display the image? (y/n) ')
-        if q.lower() == 'y':    
+        if q.lower() == 'y':
             show_image(file_name, image)
             print ('')
         else:
@@ -191,7 +190,7 @@ def main():
             print ('')
         else:
             print ('')
-        
+
         if len([f for f in os.listdir(file_path)]) == 0:
             print ('No images to encode. Program is closing.')
             print('')
