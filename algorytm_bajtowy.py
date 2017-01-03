@@ -3,7 +3,6 @@
 import cv2
 import numpy as np
 import os
-import math
 import io
 import sys
 

@@ -13,7 +13,6 @@ def load_image(file_name):
 
     image = cv2.imread(file_name, cv2.IMREAD_GRAYSCALE)
     print ('Image {} loaded.'.format(file_name))
-
     return image
 
 
