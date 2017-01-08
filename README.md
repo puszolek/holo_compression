@@ -21,6 +21,17 @@ git clone https://github.com/puszolek/holo_compression
 ```
 In samples folder you can find some sample hologram to test the algorithms.
 
+### Usage
+
+Execution of the file:
+```
+python <name_of_the_file>
+```
+Example:
+```
+python decode_bytes.py
+```
+
 ## Authors
 
 * **Paula Kochańska** - [puszolek](https://github.com/puszolek)
