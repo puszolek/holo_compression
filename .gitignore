@@ -82,10 +82,6 @@ celerybeat-schedule
 venv/
 ENV/
 
-# bmp
-*.bmp
-*.BMP
-
 # Spyder project settings
 .spyderproject
 
@@ -93,10 +89,6 @@ ENV/
 .ropeproject
 
 #
-Test/
-Source/
-New Folder/
-stats/
 Przemno¿one przez soczewki/
 
 *.DAT
