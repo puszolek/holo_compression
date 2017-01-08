@@ -34,7 +34,9 @@ python decode_bytes.py
 
 ## Authors
 
-* **Paula Kochańska** - [puszolek](https://github.com/puszolek), email: kochanska.paula@gmail.com
+* **Paula Kochańska** - [puszolek](https://github.com/puszolek), email: kochanska.paula@gmail.com 
+
+Please contact me if you want to use the code.
 
 ## License
 
