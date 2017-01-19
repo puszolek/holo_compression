@@ -283,7 +283,6 @@ def main():
         print(image_file)
         image = cv2.imread(image_file, cv2.IMREAD_GRAYSCALE)
         print(image)
-        cv2.imshow('elo', image)
         print ('Image {} loaded.'.format(image_file))
 
         start_time = time.time()
