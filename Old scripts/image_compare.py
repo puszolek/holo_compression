@@ -49,7 +49,7 @@ def rmse(imageA, imageB):
 
 def main():
 
-    images = ['C:\\Users\\puszol\\Desktop\\lenna-4000\\odtworzenia\\lenna-4000_BMP.bmp', 'C:\\Users\\puszol\\Desktop\\lenna-4000\\odtworzenia\\lenna-4000_3.bmp']
+    images = ['F:\\Projekty\\holo_compression\\CGH_compression\\folder\\lenna-4000.bmp', 'F:\\Projekty\\holo_compression\\CGH_compression\\folder\\JPEG1.bmp']
 
     print(images)
     img1 = load_image(images[0])
@@ -72,6 +72,8 @@ def main():
         print ('')
     else:
         print ('')
+
+    cv2.imwrite("C:\\Users\\puszol\\Desktop\\JPEG1_diff.bmp", diff);
 
     print('Program closed.')
 
